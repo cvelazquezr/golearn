@@ -81,17 +81,33 @@ func (b *BaggedModel) AddModel(m base.Classifier) {
 // Fit generates and trains each model on a randomised subset of
 // Instances.
 func (b *BaggedModel) Fit(from base.FixedDataGrid) {
-	var wait sync.WaitGroup
 	b.selectedAttributes = make(map[int][]base.Attribute)
+
+	finishedFlag := make(chan bool)
+	progressTraining := 0
+	mutex := &sync.Mutex{}
+	numberModels := len(b.Models)
+
 	for i, m := range b.Models {
-		wait.Add(1)
 		go func(c base.Classifier, f base.FixedDataGrid, model int) {
+			//fmt.Printf(">> Building %vth model...\n", model)
 			l := b.generateTrainingInstances(model, f)
-			c.Fit(l)
-			wait.Done()
+			err := c.Fit(l)
+			if err != nil {
+				return
+			}
+			mutex.Lock()
+			progressTraining += 1
+			//fmt.Printf(">> Training progress %.0f%%\n", float64(progressTraining)/float64(numberModels)*100)
+			mutex.Unlock()
+			finishedFlag <- true
 		}(m, from, i)
 	}
-	wait.Wait()
+
+	for i := 1; i <= numberModels; i++ {
+		<-finishedFlag
+	}
+
 	b.fitOn = base.NewStructuralCopy(from)
 }
 

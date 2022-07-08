@@ -262,8 +262,7 @@ func InferID3Tree(from base.FixedDataGrid, with RuleGenerator) *DecisionTreeNode
 	}
 	// Create new children from these attributes
 	ret.Children = make(map[string]*DecisionTreeNode)
-	for k := range splitInstances {
-		newInstances := splitInstances[k]
+	for k, newInstances := range splitInstances {
 		ret.Children[k] = InferID3Tree(newInstances, with)
 	}
 	ret.SplitRule = splitRule

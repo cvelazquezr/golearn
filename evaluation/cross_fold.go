@@ -1,6 +1,7 @@
 package evaluation
 
 import (
+	"fmt"
 	"github.com/sjwhitworth/golearn/base"
 	"math/rand"
 )
@@ -50,6 +51,7 @@ func GenerateCrossFoldValidationConfusionMatrices(data base.FixedDataGrid, cls b
 
 	// Create training/test views for each fold
 	for i := 0; i < folds; i++ {
+		fmt.Printf("Iterating over fold %d\n", i+1)
 		// Fold i is for testing
 		testData := base.NewInstancesViewFromVisible(data, inverseFoldMap[i], data.AllAttributes())
 		otherRows := make([]int, 0)
@@ -60,11 +62,13 @@ func GenerateCrossFoldValidationConfusionMatrices(data base.FixedDataGrid, cls b
 			otherRows = append(otherRows, inverseFoldMap[j]...)
 		}
 		trainData := base.NewInstancesViewFromVisible(data, otherRows, data.AllAttributes())
+		fmt.Println("Performing the training ...")
 		// Train
 		err := cls.Fit(trainData)
 		if err != nil {
 			return nil, err
 		}
+		fmt.Println("Done!")
 		// Predict
 		pred, err := cls.Predict(testData)
 		if err != nil {
